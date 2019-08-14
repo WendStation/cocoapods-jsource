@@ -46,8 +46,8 @@ module Pod
             git = @gits[index]
             source_path = get_source_path_from_binary component_name
             create_working_directory source_path
-            content = `git clone -b #{component_name}-#{version} --depth 1 #{git} #{source_path}`
-            `open #{component_name}`
+            content = `git clone -b #{component_name}-#{version} --depth 1 #{git} #{source_path}/#{component_name}`
+            `open #{source_path}`
             index = index + 1
           end
           UI.puts "tian源码成功"
@@ -107,7 +107,8 @@ module Pod
           return if Dir.exist? parent
           parent = File.expand_path(parent)
           `sudo -S mkdir -p #{parent}`
-          `sudo -S chmod 757 #{parent}`
+          user = `whoami`
+          `sudo -S chown #{user}:staff #{parent}`
         end
       end
     end
