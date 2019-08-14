@@ -107,7 +107,7 @@ module Pod
           return if Dir.exist? parent
           parent = File.expand_path(parent)
           `sudo -S mkdir -p #{parent}`
-          user = `whoami`
+          user = `whoami`.strip
           `sudo -S chown #{user}:staff #{parent}`
         end
       end
