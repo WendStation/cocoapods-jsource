@@ -45,12 +45,16 @@ module Pod
             version = component_version component_name
             git = @gits[index]
             source_path = get_source_path_from_binary component_name
-            create_working_directory source_path
-            content = `git clone -b #{component_name}-#{version} --depth 1 #{git} #{source_path}/#{component_name}`
-            `open #{source_path}`
+            if source_path
+              create_working_directory source_path
+              content = `git clone -b #{component_name}-#{version} --depth 1 #{git} #{source_path}/#{component_name}`
+              UI.puts "#{component_name} 源码创建成功，目录为 #{source_path}"
+            else
+              UI.puts "#{component_name} 可能不是二进制组件，不做任何处理"
+            end
             index = index + 1
           end
-          UI.puts "tian源码成功"
+          UI.puts "添加源码成功"
         end
 
         def component_version(component_name)
@@ -106,6 +110,7 @@ module Pod
           return unless parent.length >0
           return if Dir.exist? parent
           parent = File.expand_path(parent)
+          UI.puts "检测到没有源码目录，即将创建#{parent}目录，请输入密码："
           `sudo -S mkdir -p #{parent}`
           user = `whoami`.strip
           `sudo -S chown #{user}:staff #{parent}`
