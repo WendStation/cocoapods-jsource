@@ -1,3 +1,6 @@
+
+require 'cocoapods-jsource/command/jsource/add'
+
 module Pod
   class Command
     # This is an example of a cocoapods plugin adding a top-level subcommand
@@ -18,27 +21,27 @@ module Pod
     #       in the `plugins.json` file, once your plugin is released.
     #
     class Jsource < Command
-      self.summary = 'Short description of cocoapods-jsource.'
+      self.abstract_command = true
+      self.summary = 'Manage source debugging'
 
-      self.description = <<-DESC
-        Longer description of cocoapods-jsource.
-      DESC
+      # self.description = <<-DESC
+      #   Longer description of cocoapods-jsource.
+      # DESC
 
-      self.arguments = 'NAME'
 
-      def initialize(argv)
-        @name = argv.shift_argument
-        super
-      end
+      # def initialize(argv)
+      #   @name = argv.shift_argument
+      #   super
+      # end
 
-      def validate!
-        super
-        help! 'A Pod name is required.' unless @name
-      end
+      # def validate!
+      #   super
+      #   help! 'A Pod name is required.' unless @name
+      # end
 
-      def run
-        UI.puts "Add your implementation for the cocoapods-jsource plugin in #{__FILE__}"
-      end
+      # def run
+      #   UI.puts "Add your implementation for the cocoapods-jsource plugin in #{__FILE__}"
+      # end
     end
   end
 end
