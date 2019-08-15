@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ['794363716@qq.com']
   spec.description   = %q{ Add source code debugging capabilities to binary.}
   spec.summary       = %q{ Add source code debugging capabilities to binary.}
-  spec.homepage      = 'https://github.com/EXAMPLE/cocoapods-jsource'
+  spec.homepage      = 'https://github.com/wendstation/cocoapods-jsource'
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files`.split($/)
