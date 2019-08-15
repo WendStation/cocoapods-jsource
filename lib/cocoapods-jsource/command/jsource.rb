@@ -1,5 +1,7 @@
 
 require 'cocoapods-jsource/command/jsource/add'
+require 'cocoapods-jsource/command/jsource/clean'
+require 'cocoapods-jsource/command/jsource/list'
 
 module Pod
   class Command
@@ -27,7 +29,39 @@ module Pod
       # self.description = <<-DESC
       #   Longer description of cocoapods-jsource.
       # DESC
+      private
 
+      def cache_dir
+        path = "/Users/#{`whoami`.strip}/Library/Caches/CocoaPods/jsource/"
+        if not Dir.exist? path
+          `mkdir -p #{path}`
+        end
+        path
+      end
+
+
+      def cache_file
+        cache_path = cache_dir
+        return cache_path + "jsource.yaml"
+      end
+
+      def cache_object
+        require 'yaml'
+        cache_file_path = cache_file
+        cache_dict = {}
+        if File.exist? cache_file_path
+          cache_dict = YAML.load(File.open(cache_file_path))
+        end
+        cache_dict
+      end
+
+      def dump_to_yaml(hash)
+        File.open(cache_file, "wb+") {|f| YAML.dump(hash, f) }
+      end
+
+      def output_pipe
+        STDOUT
+      end
 
       # def initialize(argv)
       #   @name = argv.shift_argument

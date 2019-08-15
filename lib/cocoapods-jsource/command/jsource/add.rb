@@ -9,12 +9,8 @@ module Pod
         self.summary = 'Add source debugging function'
 
         self.description = <<-DESC
-          Prints the content of the podspec(s) whose name matches `QUERY` to standard output.
+          Add source code debugging capabilities to binary.
         DESC
-
-        self.arguments = [
-            CLAide::Argument.new('QUERY', false),
-        ]
 
         def self.options
           [
@@ -24,9 +20,10 @@ module Pod
         end
 
         def initialize(argv)
-          @names = argv.option('names').split(',')
-          @gits = argv.option('gits').split(',')
-          @source_dir = Dir.pwd
+          @namesString = argv.option('names')
+          @names = @namesString.split(',') unless @namesString.nil?
+          @gitsString = argv.option('gits')
+          @gits = @gitsString.split(',') unless  @gitsString.nil?
           super
         end
 
@@ -41,20 +38,33 @@ module Pod
         def run
           # 获取当前目录
           index = 0
-          for component_name in @names
+          cache_dict = cache_object
+          @names.each do |component_name|
+            pod_cache_dict = {}
+            if cache_dict.has_key? component_name
+              pod_cache_dict = cache_dict[component_name]
+            end
             version = component_version component_name
+            if pod_cache_dict.has_key? version
+              UI.puts "#{component_name} #{version} 已经存在，缓存为 #{pod_cache_dict[version][:source]}"
+              next
+            end
             git = @gits[index]
             source_path = get_source_path_from_binary component_name
-            if source_path
+            if source_path.length >0 and version
               create_working_directory source_path
-              content = `git clone -b #{component_name}-#{version} --depth 1 #{git} #{source_path}/#{component_name}`
+              cmd ="git clone -b #{component_name}-#{version} --depth 1 #{git} #{source_path}/#{component_name} >/dev/null 2>&1"
+              # UI.puts "执行：#{cmd}"
+              `#{cmd}`
+              pod_cache_dict[version] = {"git":git,"source":source_path,"version":version}
+              cache_dict[component_name] = pod_cache_dict
               UI.puts "#{component_name} 源码创建成功，目录为 #{source_path}"
             else
-              UI.puts "#{component_name} 可能不是二进制组件，不做任何处理"
+              UI.puts "#{component_name} 找不到二进制组件或者找不到对应的版本信息，不做任何处理"
             end
             index = index + 1
           end
-          UI.puts "添加源码成功"
+          dump_to_yaml cache_dict
         end
 
         def component_version(component_name)
@@ -71,6 +81,7 @@ module Pod
           version
         end
 
+        # 根据组件名获取组件的源码调试地址
         def get_source_path_from_binary(component_name)
           source_path = ""
           component_pod_path = config.sandbox_root + component_name
@@ -102,15 +113,13 @@ module Pod
           source_path
         end
 
-
-
-
+        # 创建源码的存放的目录，可能需要root权限
         def create_working_directory(source_path)
           parent = source_path.split("T")[0]
+          parent = File.expand_path(parent)
           return unless parent.length >0
           return if Dir.exist? parent
-          parent = File.expand_path(parent)
-          UI.puts "检测到没有源码目录，即将创建#{parent}目录，请输入密码："
+          UI.puts "检测到没有源码目录，即将创建#{parent}目录"
           `sudo -S mkdir -p #{parent}`
           user = `whoami`.strip
           `sudo -S chown #{user}:staff #{parent}`
