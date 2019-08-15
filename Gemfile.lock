@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     cocoapods-jsource (0.0.1)
+      cocoapods
 
 GEM
   remote: https://rubygems.org/
