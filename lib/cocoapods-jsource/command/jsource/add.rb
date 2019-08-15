@@ -15,7 +15,7 @@ module Pod
         def self.options
           [
               ['--names', 'component names to be added'],
-              ['--gits', 'componengs git url to be added'],
+              ['--gits', 'component git url to be added'],
           ].concat(super)
         end
 
