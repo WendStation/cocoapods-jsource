@@ -70,7 +70,13 @@ module Pod
         #
         def remove_caches(cache_descriptors)
           cache_descriptors.each do |desc|
-            UI.puts "Removing cache #{desc[:source]} (#{desc[:version]})"
+            sourcelist = desc[:sourcelist]
+            next if sourcelist.length == 0
+            sourcelist.each do |source|
+              UI.puts "Removing cache #{source} (#{desc[:version]})"
+              parent = source.split("Pods")[0]
+              FileUtils.rm_rf(parent) if File.exist? parent
+            end
             if @cache_dict[@pod_name].has_key? desc[:version]
               if @cache_dict[@pod_name].length == 1
                 @cache_dict.delete @pod_name
@@ -78,8 +84,6 @@ module Pod
                 @cache_dict[@pod_name].delete (desc[:version]) if @cache_dict[@pod_name].has_key? desc[:version]
               end
             end
-            parent = File.dirname desc[:source]
-            FileUtils.rm_rf(parent) if File.exist? parent
           end
         end
 
@@ -89,11 +93,14 @@ module Pod
               git=""
               source=""
               git=pod_dict[:git] if pod_dict.has_key? :git
-              source=pod_dict[:source] if pod_dict.has_key? :source
-              UI.message("Removing the #{pod_name} jsource cache dir #{cache_dir}") do
-                parent = File.dirname source
-                FileUtils.rm_rf(parent) if File.exist? parent
+              sourcelist=pod_dict[:sourcelist] if pod_dict.has_key? :sourcelist
+              sourcelist.each do |source|
+                UI.message("Removing the #{pod_name} jsource cache dir #{cache_dir}") do
+                  parent = source.split("Pods")[0]
+                  FileUtils.rm_rf(parent) if File.exist? parent
+                end
               end
+
             end
           end
           UI.message("Removing the jsource configuration dir #{cache_file}") do
