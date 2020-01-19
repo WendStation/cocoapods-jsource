@@ -17,15 +17,18 @@ module Pod
         ]
 
         def self.options
-          [[
-               '--short', 'Only print the path relative to the cache root'
-           ]].concat(super)
+          [
+              ['--short', 'Only print the path relative to the cache root'],
+              ['--cache', 'Only print the cached pods']
+          ].concat(super)
         end
 
         def initialize(argv)
           @pod_name = argv.shift_argument
           @short_output = argv.flag?('short')
+          @pod_cache = argv.flag?('cache')
           @cache_dict = cache_object
+          @manager = XcodeManager.new(argv)
           super
         end
 
@@ -33,9 +36,19 @@ module Pod
           return if @cache_dict.nil?
           result = ""
           if @pod_name
-            result = @cache_dict[@pod_name] if @cache_dict.has_key? @pod_name
+            if @pod_cache
+              result = @cache_dict[@pod_name] if @cache_dict.has_key? @pod_name
+            else
+              # 获取debug里 这个pod_name 的关键信息
+              result = @manager.component_in_debug @pod_name
+            end
           else
-            result = @cache_dict
+            if @pod_cache
+              result = @cache_dict
+            else
+              # 获取debug里所有的group信息。
+              result = @manager.all_components_in_debug
+            end
           end
           if @short_output
             result = result.keys

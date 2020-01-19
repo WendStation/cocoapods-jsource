@@ -39,7 +39,6 @@ module Pod
         path
       end
 
-
       def cache_file
         cache_path = cache_dir
         return cache_path + "jsource.yaml"
@@ -54,6 +53,21 @@ module Pod
         end
         cache_dict
       end
+
+      def version_from_path(component_name, path)
+        cache_dict = cache_object
+        version = nil
+        cache_dict.each do |name, verision_hash|
+          verision_hash.each do |version_string, detail_hash|
+            return version unless detail_hash.include? :source_paths
+            detail_hash[:source_paths].each do |binary_name, source_path|
+              return version_string if source_path == path and binary_name == component_name
+            end
+          end
+        end
+        return version
+      end
+
 
       def dump_to_yaml(hash)
         File.open(cache_file, "wb+") {|f| YAML.dump(hash, f) }
