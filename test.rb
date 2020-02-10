@@ -1,7 +1,7 @@
 require 'xcodeproj'
 require 'cocoapods'
 
-`cd /Users/handa/Downloads/Example;pod jsource add --help`
+`cd /Users/handa/Documents/lianjia/C/lianjia_ios_platc;pod jsource add LJRefresh`
 #`cd /Users/handa/Downloads/Example;pod jsource clean LJRefresh --cache`
 #`cd /Users/handa/Documents/lianjia/C/lianjia_ios_platc;pod jsource add LJBaseToolKit`
 #`cd /Users/handa/Downloads/Example;pod jsource add LJRefresh http://gerrit.lianjia.com/mobile_ios/LJRefresh`

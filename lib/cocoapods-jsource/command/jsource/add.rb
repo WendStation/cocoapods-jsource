@@ -268,6 +268,7 @@ module Pod
           dependencies = lockfile.internal_data["DEPENDENCIES"]
           subspecs = []
           dependencies.each do |dependency|
+            next unless dependency.start_with? component_name
             if !dependency.include? "(="
               UI.puts "podfile中 #{component_name} 可能没有指定版本，需要指定确定的版本才能使用。"
               exit 1

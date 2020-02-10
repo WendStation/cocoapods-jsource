@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    cocoapods-jsource (0.0.3)
+    cocoapods-jsource (0.0.4)
       cocoapods
 
 GEM
