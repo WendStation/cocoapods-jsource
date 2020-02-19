@@ -158,14 +158,17 @@ module Pod
                 exit 1
               end
               if File.directory? origin_file_path
-                FileUtils.mkdir_p [dest_file_path], :mode => 0700 unless File.exist? dest_file_path
+                # FileUtils.mkdir_p [dest_file_path], :mode => 0700 unless File.exist? dest_file_path
+                create_working_directory dest_file_path
               else
+                create_working_directory dest_file_path
                 parent_dir = File.dirname dest_file_path
                 FileUtils.mkdir_p [parent_dir], :mode => 0700 unless File.exist? parent_dir
                 FileUtils.copy origin_file_path, dest_file_path unless File.exist? dest_file_path
                 h_origin_file_path = origin_file_path.gsub(/(mm|m|c)$/, "h")
                 h_dest_file_path = dest_file_path.gsub(/(mm|m|c)$/, "h")
                 parent_dir = File.dirname h_dest_file_path
+                create_working_directory parent_dir
                 FileUtils.mkdir_p [parent_dir], :mode => 0700 unless File.exist? parent_dir
                 FileUtils.copy h_origin_file_path, h_dest_file_path unless File.exist? h_dest_file_path
               end
