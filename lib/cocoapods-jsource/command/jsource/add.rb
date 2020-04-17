@@ -147,12 +147,29 @@ module Pod
           #file_list = get_file_list path
           source_paths_hash.each do |binary_name, source_path_list|
             if source_path_list.length > 0
-              dest_file_path = source_path_list[0].split("Pods")[0] + "Pods/#{binary_name}"
+              if source_path_list[0].include?("Pods")
+                dest_file_path = source_path_list[0].split("Pods")[0] + "Pods/#{binary_name}"
+              else
+                tmp_list = source_path_list[0].split(component_name)
+                dest_file_path = tmp_list[0]
+                if tmp_list.length > 2
+                  dest_file_path += component_name
+                end
+              end
               UI.puts "copying #{binary_name} to #{dest_file_path}"
             end
             source_path_list.each do |dest_file_path|
-              origin_file = dest_file_path.split("Pods/#{binary_name}")[-1]
-              origin_file_path = path + origin_file
+              if dest_file_path.include?("Pods")
+                origin_file = dest_file_path.split("Pods/#{binary_name}")[-1]
+                origin_file_path = path + origin_file
+              else
+                tmp_list = dest_file_path.split(component_name)
+                origin_file = tmp_list[-1]
+                if tmp_list.length > 2
+                  origin_file =  component_name + origin_file
+                end
+                origin_file_path = path + "/#{origin_file}"
+              end
               if !File.exist? origin_file_path
                 UI.warn "本地不存在#{origin_file_path}, 可能使用了虚拟subspec或者本地源码缓存有问题。推荐加上 --remote 参数"
                 exit 1
@@ -330,6 +347,10 @@ module Pod
               if tmp_source_path.include?("Pods/#{binary_name}")
                 source_path = tmp_source_path.strip.split("(\"")[-1].split("\")")[0]
                 source_list << source_path if source_path.to_s.length > 0
+              end
+              if tmp_source_path.include?("../../")
+                source_path = tmp_source_path.strip.split("(\"")[-1].split("\")")[0]
+                source_list << source_path
               end
             end
             if source_list.length == 0
