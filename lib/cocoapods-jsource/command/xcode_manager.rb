@@ -100,7 +100,7 @@ module Pod
 
         def avaliable_dirs(file_path, dest_file_path)
           dir_list = []
-          if file_path.to_s == dest_file_path.to_s
+          if "#{file_path.to_s}/" == dest_file_path.to_s
             return dir_list
           else
             parent_dir = File.dirname file_path
@@ -117,7 +117,7 @@ module Pod
           if subspec
             spec.subspecs.each do |subspec_spec|
               next unless subspec_spec.name == "#{component_name}/#{subspec}"
-              source_files = "#{group.real_path}/#{subspec_spec.attributes_hash["source_files"]}"
+              source_files = "#{group.real_path}#{subspec_spec.attributes_hash["source_files"]}"
               tmp_files = Dir.glob (source_files)
               # 找到所有的文件夹
               tmp_files.each do |file_path|

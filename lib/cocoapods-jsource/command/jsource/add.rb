@@ -77,7 +77,12 @@ module Pod
 
         def download_component_to_path(component_name, version, source_path_hash={})
           source_path_hash.each do |binary_name, source_path|
-            sandbox_path = source_path.split("Pods")[0] + "Pods"
+            if source_path.include?("Pods")
+              sandbox_path = source_path.split("Pods")[0] + "Pods"
+            else
+              sandbox_path = source_path.gsub(/\/#{component_name}$/,"")
+            end
+
             sandbox_component_path = "#{sandbox_path}/#{component_name}"
             binary_path = "#{sandbox_path}/#{binary_name}"
             if File.exist? sandbox_component_path
@@ -87,6 +92,7 @@ module Pod
             else
               UI.puts "downloading #{binary_name} #{version}"
               UI.puts "\t #{source_path.to_s}"
+              create_working_directory(sandbox_path)
               FileUtils.mkdir_p [binary_path] unless File.exist? binary_path
               sandbox = Sandbox.new(sandbox_path)
               spec = spec_with_name(component_name, version)
@@ -96,6 +102,12 @@ module Pod
               #installer.clean!
               # TODO validtarget
               # 改名
+              # 去掉framework
+              framework_path = "#{binary_path}/#{component_name}/Framework"
+              if File.directory?(framework_path)
+                UI.puts "正在清理无用资源：#{framework_path}"
+                `rm -rf #{framework_path}`
+              end
               if binary_name != component_name and File.exist? sandbox_component_path
                 FileUtils.copy_entry(sandbox_component_path, binary_path) unless File.exist? binary_name
               end
@@ -150,24 +162,17 @@ module Pod
               if source_path_list[0].include?("Pods")
                 dest_file_path = source_path_list[0].split("Pods")[0] + "Pods/#{binary_name}"
               else
-                tmp_list = source_path_list[0].split(component_name)
-                dest_file_path = tmp_list[0]
-                if tmp_list.length > 2
-                  dest_file_path += component_name
-                end
+                dest_file_path = file_path(source_path_list[0], component_name)
               end
               UI.puts "copying #{binary_name} to #{dest_file_path}"
             end
             source_path_list.each do |dest_file_path|
-              if dest_file_path.include?("Pods")
+              if dest_file_path.include?("/Pods/")
                 origin_file = dest_file_path.split("Pods/#{binary_name}")[-1]
                 origin_file_path = path + origin_file
               else
-                tmp_list = dest_file_path.split(component_name)
-                origin_file = tmp_list[-1]
-                if tmp_list.length > 2
-                  origin_file =  component_name + origin_file
-                end
+                tmp_path = file_path dest_file_path, component_name
+                origin_file = dest_file_path.gsub(tmp_path, "")
                 origin_file_path = path + "/#{origin_file}"
               end
               if !File.exist? origin_file_path
@@ -194,6 +199,21 @@ module Pod
 
         end
 
+        def file_path(source_path, component_name)
+          tmp_list = source_path.split("#{component_name}/")
+          # if tmp_list.length == 4 and tmp_list[1] != "/"
+          #   path = "#{tmp_list[0]}#{binary_name}#{tmp_list[1]}#{binary_name}"
+          # end
+          # if tmp_list.length == 5 and tmp_list[2] == "_binary/"
+          #   path = source_paths[0].split(binary_name)[0] + "#{binary_name}/#{binary_name}"
+          # end
+          if tmp_list.length < 3
+            UI.puts "旧版本的不支持，请重新打二级制"
+            exit 1
+          end
+          path = source_path.gsub("#{component_name}/#{tmp_list[-1]}", "")
+          path
+        end
 
         def component_cache(component_name)
           if @cache_dict.has_key? component_name
@@ -223,10 +243,10 @@ module Pod
         end
 
 
-        def unite_source_paths_hash(source_paths_hash)
+        def unite_source_paths_hash(source_paths_hash, component_name)
           source_path_hash = {}
           source_paths_hash.each do |binary_name, source_paths|
-            source_path_hash[binary_name] = source_paths[0].split("Pods")[0] + "Pods/#{binary_name}" if source_paths.length > 0
+            source_path_hash[binary_name] = file_path(source_paths[0], component_name)
           end
           source_path_hash
         end
@@ -254,7 +274,7 @@ module Pod
                 next
               end
               source_paths_hash = local_source_paths component_name, subspecs, source_paths_hash
-              source_path_hash = unite_source_paths_hash source_paths_hash
+              source_path_hash = unite_source_paths_hash source_paths_hash, component_name
               if @remote
                 # 需要把值合并。
                 download_component_to_path component_name, version, source_path_hash
@@ -333,10 +353,10 @@ module Pod
             at_name_list = []
             if binary_name.to_s.end_with? libbinary_file_name
               # .a 文件
-              at_name_list = `dwarfdump -arch x86_64 #{binary_path} | grep 'AT_name.*#{binary_name}'`.strip.split("\n").sort
+              at_name_list = `dwarfdump -arch x86_64 #{binary_path} | grep 'DW_AT_decl_file'`.strip.split("\n").sort
             else
               # framework 文件
-              at_name_list = `dwarfdump -arch x86_64 #{binary_path} | grep 'DW_AT_name.*#{binary_name}'`.strip.split("\n").sort
+              at_name_list = `dwarfdump -arch x86_64 #{binary_path} | grep 'DW_AT_decl_file'`.strip.split("\n").sort
             end
             #if source_file.length == 0
             #  UI.puts "在#{binary_path} 里没有找到合适的调试信息~"
@@ -344,20 +364,18 @@ module Pod
             #end
             source_list = []
             at_name_list.each do |tmp_source_path|
-              if tmp_source_path.include?("Pods/#{binary_name}")
-                source_path = tmp_source_path.strip.split("(\"")[-1].split("\")")[0]
-                source_list << source_path if source_path.to_s.length > 0
-              end
-              if tmp_source_path.include?("../../")
-                source_path = tmp_source_path.strip.split("(\"")[-1].split("\")")[0]
-                source_list << source_path
-              end
+              source_path = tmp_source_path.strip.split("(\"")[-1].split("\")")[0]
+              next if source_path.to_s.start_with?("/Applications/Xcode.app/Contents/Developer/Platforms/")
+              source_path = tmp_source_path.strip.split("(\"")[-1].split("\")")[0]
+              next unless source_path.to_s.include?("/../../")
+              source_path = File.expand_path(source_path)
+              source_list << source_path if source_path.to_s.length > 0 and not source_list.include?(source_path)
             end
             if source_list.length == 0
               UI.puts "#{component_name} 没有找到调试信息, 可能是早期打的组件。建议这个组件重新生成。"
               exit 1
             else
-              source_path_hash[binary_name] = source_list
+              source_path_hash[binary_name] = source_list.sort
             end
           end
           source_path_hash
@@ -366,9 +384,13 @@ module Pod
 
         # 创建源码的存放的目录，可能需要root权限
         def create_working_directory(source_path)
-          parent = source_path.split("T")[0]
-          parent = File.expand_path(parent)
-          return unless parent.length >0
+          # parent = File.dirname(source_path)
+          if not source_path.include? "/binary/"
+            UI.puts "旧版本的二进制不在支持，请通过keones重新打包"
+            exit 1
+          end
+          parent = source_path.split("/binary/")[0] + "/binary/"
+          return unless parent.length > 0
           return if Dir.exist? parent
           UI.puts "检测到没有源码目录，即将创建#{parent}目录"
           `sudo -S mkdir -p #{parent}`

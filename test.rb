@@ -1,7 +1,7 @@
 require 'xcodeproj'
 require 'cocoapods'
 
-`cd /Users/handa/Documents/lianjia/B/Lianjia_Alliance_Shell_Project;pod jsource add Lianjia_Alliance_Business`
+`cd /Users/handa/Documents/lianjia/B/Lianjia_Alliance_Shell_Project;pod jsource add Lianjia_Alliance_User`
 
 #`cd /Users/handa/Downloads/Example;pod jsource clean LJRefresh --cache`
 #`cd /Users/handa/Documents/lianjia/C/lianjia_ios_platc;pod jsource add LJBaseToolKit`
